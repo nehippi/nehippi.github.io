@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Карточки для обучения</title>
+    <title>Учебные карточки</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -11,6 +11,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         :root {
@@ -24,19 +25,18 @@
             --light: #f8f9fa;
             --gray: #6c757d;
             --gray-light: #e9ecef;
-            --border-radius: 12px;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
+            --border-radius: 16px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.25s ease;
         }
         
         body {
-            background-color: #f5f7ff;
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f2ff 100%);
             color: var(--dark);
             line-height: 1.6;
-            padding: 0;
             overflow-x: hidden;
             min-height: 100vh;
-            padding-bottom: 80px;
+            padding-bottom: 70px;
         }
         
         .container {
@@ -50,16 +50,17 @@
         .header {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
-            padding: 20px 16px;
+            padding: 18px 16px;
             box-shadow: var(--shadow);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: sticky;
             top: 0;
             z-index: 100;
+            backdrop-filter: blur(10px);
         }
         
         .header h1 {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -67,7 +68,7 @@
         }
         
         .header h1 i {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
         }
         
         /* Основные экраны */
@@ -95,7 +96,7 @@
             color: white;
             border: none;
             border-radius: var(--border-radius);
-            padding: 14px 20px;
+            padding: 16px 20px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
@@ -103,17 +104,20 @@
             text-decoration: none;
             width: 100%;
             margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
         }
         
         .btn:hover, .btn:active {
             background-color: var(--secondary);
             transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.3);
         }
         
         .btn-outline {
             background-color: transparent;
             border: 2px solid var(--primary);
             color: var(--primary);
+            box-shadow: none;
         }
         
         .btn-outline:hover, .btn-outline:active {
@@ -123,6 +127,7 @@
         
         .btn-danger {
             background-color: var(--danger);
+            box-shadow: 0 4px 12px rgba(247, 37, 133, 0.2);
         }
         
         .btn-danger:hover, .btn-danger:active {
@@ -131,22 +136,15 @@
         
         .btn-success {
             background-color: var(--success);
+            box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
         }
         
         .btn-success:hover, .btn-success:active {
             background-color: #2bb2d9;
         }
         
-        .btn-warning {
-            background-color: var(--warning);
-        }
-        
-        .btn-warning:hover, .btn-warning:active {
-            background-color: #e07c0c;
-        }
-        
         .btn-small {
-            padding: 8px 16px;
+            padding: 10px 16px;
             font-size: 0.9rem;
         }
         
@@ -163,15 +161,15 @@
         /* Карточки папок */
         .folders-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 16px;
-            margin-top: 20px;
+            margin-top: 16px;
         }
         
         .folder-card {
-            background-color: white;
+            background: white;
             border-radius: var(--border-radius);
-            padding: 20px 16px;
+            padding: 20px;
             box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
@@ -181,33 +179,36 @@
             cursor: pointer;
             min-height: 140px;
             position: relative;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .folder-card:hover, .folder-card:active {
-            transform: translateY(-5px);
+            transform: translateY(-5px) scale(1.02);
         }
         
         .folder-color {
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 12px;
             color: white;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .folder-name {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1rem;
             text-align: center;
             margin-bottom: 4px;
+            line-height: 1.3;
         }
         
         .folder-count {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--gray);
         }
         
@@ -229,55 +230,61 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: var(--dark);
+            font-size: 0.95rem;
         }
         
         .form-control {
             width: 100%;
-            padding: 14px 16px;
+            padding: 16px;
             border: 2px solid var(--gray-light);
             border-radius: var(--border-radius);
             font-size: 1rem;
             transition: var(--transition);
+            background: white;
         }
         
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
         }
         
         .color-picker {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
             margin-top: 10px;
+            justify-content: center;
         }
         
         .color-option {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             cursor: pointer;
             border: 3px solid transparent;
             transition: var(--transition);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
         }
         
         .color-option.selected {
             border-color: var(--dark);
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
         
         /* Карточки вопросов */
         .cards-list {
-            margin-top: 20px;
+            margin-top: 16px;
         }
         
         .card-item {
-            background-color: white;
+            background: white;
             border-radius: var(--border-radius);
             padding: 20px;
             box-shadow: var(--shadow);
             margin-bottom: 16px;
             transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .card-item:hover {
@@ -289,43 +296,47 @@
             font-size: 1.1rem;
             margin-bottom: 12px;
             color: var(--dark);
+            line-height: 1.4;
         }
         
         .card-answer {
             padding-top: 12px;
             border-top: 1px dashed var(--gray-light);
             color: var(--gray);
+            line-height: 1.5;
         }
         
         .card-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 16px;
         }
         
         /* Викторина */
         .quiz-card {
-            background-color: white;
+            background: white;
             border-radius: var(--border-radius);
             padding: 30px 24px;
             box-shadow: var(--shadow);
             margin: 20px 0;
-            min-height: 400px;
+            min-height: 380px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .quiz-card h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--gray);
             margin-bottom: 20px;
+            font-weight: 600;
         }
         
         .quiz-content {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 600;
             margin: 20px 0;
             flex-grow: 1;
@@ -339,12 +350,14 @@
             font-size: 0.9rem;
             color: var(--gray);
             margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--gray-light);
         }
         
         /* Навигация */
         .nav-buttons {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-top: 20px;
         }
         
@@ -356,19 +369,27 @@
         /* Пустой state */
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
+            padding: 60px 20px;
             color: var(--gray);
         }
         
         .empty-state i {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 20px;
             color: var(--gray-light);
+            opacity: 0.7;
         }
         
         .empty-state h3 {
             font-size: 1.3rem;
             margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .empty-state p {
+            font-size: 0.95rem;
+            max-width: 300px;
+            margin: 0 auto;
         }
         
         /* Нижняя панель */
@@ -377,12 +398,15 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: white;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0;
+            padding: 12px 0 16px;
             z-index: 100;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .nav-item {
@@ -394,15 +418,22 @@
             text-decoration: none;
             transition: var(--transition);
             flex: 1;
+            opacity: 0.7;
         }
         
         .nav-item i {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             margin-bottom: 4px;
+            transition: var(--transition);
         }
         
         .nav-item.active {
             color: var(--primary);
+            opacity: 1;
+        }
+        
+        .nav-item.active i {
+            transform: translateY(-2px);
         }
         
         /* Адаптивность */
@@ -416,7 +447,7 @@
             }
             
             .header h1 {
-                font-size: 1.5rem;
+                font-size: 1.3rem;
             }
             
             .folders-grid {
@@ -425,12 +456,22 @@
             }
             
             .quiz-card {
-                min-height: 350px;
+                min-height: 340px;
                 padding: 20px 16px;
             }
             
             .quiz-content {
-                font-size: 1.2rem;
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                padding: 14px 16px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .folders-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             }
         }
         
@@ -454,6 +495,24 @@
         .fade-in {
             animation: fadeIn 0.5s ease;
         }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -465,8 +524,16 @@
     </div>
     
     <div class="container">
+        <!-- Экран загрузки -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>Загрузка данных...</p>
+            </div>
+        </div>
+        
         <!-- Экран со списком папок -->
-        <div id="folders-screen" class="screen active">
+        <div id="folders-screen" class="screen">
             <h2 class="mb-20">Мои папки</h2>
             
             <button id="add-folder-btn" class="btn btn-success">
@@ -477,7 +544,7 @@
                 <!-- Папки будут добавляться сюда -->
             </div>
             
-            <div id="empty-folders" class="empty-state">
+            <div id="empty-folders" class="empty-state hidden">
                 <i class="fas fa-folder-open"></i>
                 <h3>Нет созданных папок</h3>
                 <p>Создайте первую папку для хранения карточек</p>
@@ -516,15 +583,6 @@
         
         <!-- Экран просмотра карточек в папке -->
         <div id="view-folder-screen" class="screen">
-            <div class="nav-buttons">
-                <button id="back-from-view-btn" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <button id="start-quiz-btn" class="btn btn-success">
-                    <i class="fas fa-play-circle"></i> Викторина
-                </button>
-            </div>
-            
             <h2 id="view-folder-title" class="mb-20"></h2>
             
             <button id="add-card-btn" class="btn">
@@ -535,7 +593,7 @@
                 <!-- Карточки будут добавляться сюда -->
             </div>
             
-            <div id="empty-cards" class="empty-state">
+            <div id="empty-cards" class="empty-state hidden">
                 <i class="fas fa-sticky-note"></i>
                 <h3>Нет карточек в этой папке</h3>
                 <p>Добавьте первую карточку с вопросом и ответом</p>
@@ -544,7 +602,7 @@
         
         <!-- Экран создания/редактирования карточки -->
         <div id="edit-card-screen" class="screen">
-            <h2 class="mb-20">Новая карточка</h2>
+            <h2 class="mb-20" id="edit-card-title">Новая карточка</h2>
             
             <form id="card-form">
                 <div class="form-group">
@@ -566,15 +624,6 @@
         
         <!-- Экран викторины -->
         <div id="quiz-screen" class="screen">
-            <div class="nav-buttons">
-                <button id="back-from-quiz-btn" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <button id="end-quiz-btn" class="btn btn-danger">
-                    <i class="fas fa-stop-circle"></i> Завершить
-                </button>
-            </div>
-            
             <h2 id="quiz-folder-title" class="mb-20"></h2>
             
             <div class="quiz-card">
@@ -608,14 +657,186 @@
             <i class="fas fa-layer-group"></i>
             <span>Папки</span>
         </a>
-        <a href="#" class="nav-item" data-screen="quiz-screen" id="quiz-nav">
+        <a href="#" class="nav-item" data-screen="quiz-screen">
             <i class="fas fa-play-circle"></i>
             <span>Викторина</span>
         </a>
     </div>
 
     <script>
-        // Хранение данных в памяти
+        // ====================== КЛАСС ДЛЯ РАБОТЫ С INDEXEDDB ======================
+        class FlashcardDB {
+            constructor() {
+                this.db = null;
+                this.dbName = 'FlashcardsDB';
+                this.storeName = 'flashcards';
+                this.version = 1;
+                this.isInitialized = false;
+                this.autoSaveTimeout = null;
+                this.autoSaveDelay = 1000; // Сохраняем через 1 секунду после изменений
+            }
+            
+            // Инициализация базы данных
+            async init() {
+                return new Promise((resolve, reject) => {
+                    if (this.isInitialized) {
+                        resolve();
+                        return;
+                    }
+                    
+                    const request = indexedDB.open(this.dbName, this.version);
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        
+                        // Создаем хранилище объектов, если его нет
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+                            console.log('Хранилище создано');
+                        }
+                    };
+                    
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        this.isInitialized = true;
+                        console.log('База данных инициализирована');
+                        resolve();
+                    };
+                    
+                    request.onerror = (event) => {
+                        console.error('Ошибка открытия базы данных:', event.target.error);
+                        reject(new Error('Не удалось открыть базу данных'));
+                    };
+                });
+            }
+            
+            // Автоматическое сохранение (с debounce)
+            async autoSave(data) {
+                if (!this.isInitialized) {
+                    await this.init();
+                }
+                
+                // Отменяем предыдущий таймер, если есть
+                if (this.autoSaveTimeout) {
+                    clearTimeout(this.autoSaveTimeout);
+                }
+                
+                // Устанавливаем новый таймер для сохранения
+                this.autoSaveTimeout = setTimeout(async () => {
+                    await this.saveAllData(data);
+                }, this.autoSaveDelay);
+            }
+            
+            // Сохранение всех данных приложения
+            async saveAllData(appData) {
+                return new Promise((resolve, reject) => {
+                    if (!this.isInitialized) {
+                        reject(new Error('База данных не инициализирована'));
+                        return;
+                    }
+                    
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    
+                    // Сохраняем полное состояние приложения
+                    const dataToSave = {
+                        id: 'appState',
+                        folders: appData.folders,
+                        lastSaved: new Date().toISOString()
+                    };
+                    
+                    const request = store.put(dataToSave);
+                    
+                    request.onsuccess = () => {
+                        console.log('Данные сохранены в IndexedDB');
+                        resolve();
+                    };
+                    
+                    request.onerror = (event) => {
+                        console.error('Ошибка сохранения данных:', event.target.error);
+                        reject(new Error('Не удалось сохранить данные'));
+                    };
+                });
+            }
+            
+            // Загрузка всех данных приложения
+            async loadAllData() {
+                return new Promise(async (resolve, reject) => {
+                    if (!this.isInitialized) {
+                        await this.init();
+                    }
+                    
+                    const transaction = this.db.transaction([this.storeName], 'readonly');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.get('appState');
+                    
+                    request.onsuccess = (event) => {
+                        const result = event.target.result;
+                        
+                        if (result && result.folders) {
+                            console.log('Данные загружены из IndexedDB');
+                            resolve({
+                                folders: result.folders,
+                                currentFolderId: null,
+                                currentCardId: null,
+                                quiz: {
+                                    active: false,
+                                    currentFolderId: null,
+                                    remainingCards: [],
+                                    currentCard: null,
+                                    showAnswer: false
+                                }
+                            });
+                        } else {
+                            console.log('Нет сохраненных данных, возвращаем пустое состояние');
+                            resolve({
+                                folders: [],
+                                currentFolderId: null,
+                                currentCardId: null,
+                                quiz: {
+                                    active: false,
+                                    currentFolderId: null,
+                                    remainingCards: [],
+                                    currentCard: null,
+                                    showAnswer: false
+                                }
+                            });
+                        }
+                    };
+                    
+                    request.onerror = (event) => {
+                        console.error('Ошибка загрузки данных:', event.target.error);
+                        reject(new Error('Не удалось загрузить данные'));
+                    };
+                });
+            }
+            
+            // Очистка всех данных (для отладки)
+            async clearAllData() {
+                return new Promise((resolve, reject) => {
+                    if (!this.isInitialized) {
+                        reject(new Error('База данных не инициализирована'));
+                        return;
+                    }
+                    
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.clear();
+                    
+                    request.onsuccess = () => {
+                        console.log('Все данные очищены');
+                        resolve();
+                    };
+                    
+                    request.onerror = (event) => {
+                        console.error('Ошибка очистки данных:', event.target.error);
+                        reject(new Error('Не удалось очистить данные'));
+                    };
+                });
+            }
+        }
+        
+        // ====================== ОСНОВНОЕ ПРИЛОЖЕНИЕ ======================
         let appData = {
             folders: [],
             currentFolderId: null,
@@ -629,17 +850,95 @@
             }
         };
         
-        // Загрузка данных из localStorage (если есть)
-        function loadData() {
-            const savedData = localStorage.getItem('flashcardsAppData');
-            if (savedData) {
-                appData = JSON.parse(savedData);
+        // Инициализация базы данных
+        const flashcardDB = new FlashcardDB();
+        
+        // Загрузка данных при запуске
+        async function loadInitialData() {
+            try {
+                // Показываем экран загрузки
+                showScreen('loading-screen');
+                
+                // Загружаем данные из IndexedDB
+                const loadedData = await flashcardDB.loadAllData();
+                appData = loadedData;
+                
+                // Если нет данных, создаем пример папки
+                if (appData.folders.length === 0) {
+                    createSampleData();
+                    // Сохраняем примерные данные
+                    await flashcardDB.saveAllData(appData);
+                }
+                
+                // Скрываем экран загрузки и показываем основной экран
+                setTimeout(() => {
+                    showScreen('folders-screen');
+                    renderFolders();
+                }, 500);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                // В случае ошибки показываем основной экран с пустыми данными
+                showScreen('folders-screen');
+                renderFolders();
             }
         }
         
-        // Сохранение данных в localStorage
-        function saveData() {
-            localStorage.setItem('flashcardsAppData', JSON.stringify(appData));
+        // Создание примерных данных для первого запуска
+        function createSampleData() {
+            const sampleFolders = [
+                {
+                    id: generateId(),
+                    name: "История России",
+                    color: "#4361ee",
+                    cards: [
+                        {
+                            id: generateId(),
+                            question: "В каком году произошло Крещение Руси?",
+                            answer: "988 год"
+                        },
+                        {
+                            id: generateId(),
+                            question: "Кто был первым императором России?",
+                            answer: "Пётр I Великий"
+                        },
+                        {
+                            id: generateId(),
+                            question: "Когда началась Великая Отечественная война?",
+                            answer: "22 июня 1941 года"
+                        }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    name: "Английские слова",
+                    color: "#f72585",
+                    cards: [
+                        {
+                            id: generateId(),
+                            question: "Как переводится слово 'opportunity'?",
+                            answer: "Возможность, шанс"
+                        },
+                        {
+                            id: generateId(),
+                            question: "Что означает выражение 'to take for granted'?",
+                            answer: "Принимать как должное"
+                        },
+                        {
+                            id: generateId(),
+                            question: "Как будет 'устойчивый' по-английски?",
+                            answer: "Sustainable"
+                        }
+                    ]
+                }
+            ];
+            
+            appData.folders = sampleFolders;
+        }
+        
+        // Генерация уникального ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
         
         // Переключение между экранами
@@ -659,6 +958,8 @@
             
             if (screenId === 'folders-screen') {
                 document.querySelector('.nav-item[data-screen="folders-screen"]').classList.add('active');
+            } else if (screenId === 'quiz-screen') {
+                document.querySelector('.nav-item[data-screen="quiz-screen"]').classList.add('active');
             }
             
             // Обновляем данные на экране
@@ -671,25 +972,28 @@
                     document.getElementById('view-folder-title').style.color = folder.color;
                     renderCards();
                 }
-            } else if (screenId === 'quiz-screen' && appData.quiz.currentFolderId !== null) {
-                const folder = appData.folders.find(f => f.id === appData.quiz.currentFolderId);
-                if (folder) {
-                    document.getElementById('quiz-folder-title').textContent = `Викторина: ${folder.name}`;
-                    document.getElementById('quiz-folder-title').style.color = folder.color;
-                }
-                
-                // Если викторина не активна, начинаем новую
-                if (!appData.quiz.active) {
-                    startQuiz();
+            } else if (screenId === 'quiz-screen') {
+                // Если викторина не активна, начинаем новую для текущей папки
+                if (!appData.quiz.active && appData.currentFolderId) {
+                    startQuiz(appData.currentFolderId);
+                } else if (!appData.quiz.active) {
+                    // Если нет текущей папки, показываем сообщение
+                    document.getElementById('quiz-content').innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><h3>Выберите папку</h3><p>Для начала викторины откройте папку с карточками</p></div>';
+                    document.getElementById('quiz-next-btn').classList.add('hidden');
+                    document.getElementById('quiz-folder-title').textContent = 'Викторина';
                 } else {
                     updateQuizDisplay();
                 }
             }
         }
         
-        // Генерация ID
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        // Автоматическое сохранение данных
+        async function autoSaveAppData() {
+            try {
+                await flashcardDB.autoSave(appData);
+            } catch (error) {
+                console.error('Ошибка автоматического сохранения:', error);
+            }
         }
         
         // Отображение списка папок
@@ -746,11 +1050,24 @@
         }
         
         // Удаление папки
-        function deleteFolder(folderId) {
+        async function deleteFolder(folderId) {
             if (confirm('Вы уверены, что хотите удалить эту папку со всеми карточками?')) {
                 appData.folders = appData.folders.filter(f => f.id !== folderId);
-                saveData();
-                renderFolders();
+                
+                // Если удалили текущую папку, сбрасываем текущую папку
+                if (appData.currentFolderId === folderId) {
+                    appData.currentFolderId = null;
+                }
+                
+                // Автоматически сохраняем изменения
+                await autoSaveAppData();
+                
+                // Если мы на экране просмотра папки, возвращаемся к списку папок
+                if (document.getElementById('view-folder-screen').classList.contains('active')) {
+                    showScreen('folders-screen');
+                } else {
+                    renderFolders();
+                }
             }
         }
         
@@ -771,7 +1088,7 @@
             
             folder.cards.forEach(card => {
                 const cardElement = document.createElement('div');
-                cardElement.className = 'card-item';
+                cardElement.className = 'card-item fade-in';
                 cardElement.innerHTML = `
                     <div class="card-question">${card.question}</div>
                     <div class="card-answer">${card.answer}</div>
@@ -815,26 +1132,29 @@
             if (card) {
                 document.getElementById('card-question').value = card.question;
                 document.getElementById('card-answer').value = card.answer;
-                document.querySelector('#edit-card-screen h2').textContent = 'Редактировать карточку';
+                document.getElementById('edit-card-title').textContent = 'Редактировать карточку';
                 showScreen('edit-card-screen');
             }
         }
         
         // Удаление карточки
-        function deleteCard(cardId) {
+        async function deleteCard(cardId) {
             if (confirm('Вы уверены, что хотите удалить эту карточку?')) {
                 const folder = appData.folders.find(f => f.id === appData.currentFolderId);
                 if (folder) {
                     folder.cards = folder.cards.filter(c => c.id !== cardId);
-                    saveData();
+                    
+                    // Автоматически сохраняем изменения
+                    await autoSaveAppData();
+                    
                     renderCards();
                 }
             }
         }
         
         // Начало викторины
-        function startQuiz() {
-            const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+        function startQuiz(folderId) {
+            const folder = appData.folders.find(f => f.id === folderId);
             if (!folder || folder.cards.length === 0) {
                 alert('В этой папке нет карточек для викторины!');
                 showScreen('view-folder-screen');
@@ -843,11 +1163,16 @@
             
             appData.quiz = {
                 active: true,
-                currentFolderId: appData.currentFolderId,
+                currentFolderId: folderId,
                 remainingCards: [...folder.cards],
                 currentCard: null,
                 showAnswer: false
             };
+            
+            document.getElementById('quiz-folder-title').textContent = `Викторина: ${folder.name}`;
+            document.getElementById('quiz-folder-title').style.color = folder.color;
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+            document.getElementById('quiz-completed').classList.add('hidden');
             
             nextQuizCard();
             updateQuizDisplay();
@@ -908,16 +1233,12 @@
             const remaining = quiz.remainingCards.length + (quiz.currentCard ? 1 : 0);
             
             progress.textContent = `Карточка ${totalCards - remaining + 1} из ${totalCards}`;
-            
-            // Скрываем завершение викторины, если оно отображается
-            document.getElementById('quiz-completed').classList.add('hidden');
-            document.getElementById('quiz-next-btn').classList.remove('hidden');
         }
         
         // Обработчики событий при загрузке страницы
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            renderFolders();
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Загружаем данные из IndexedDB
+            await loadInitialData();
             
             // Выбор цвета папки
             document.querySelectorAll('.color-option').forEach(option => {
@@ -943,7 +1264,7 @@
             });
             
             // Сохранение папки
-            document.getElementById('folder-form').addEventListener('submit', (e) => {
+            document.getElementById('folder-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const name = document.getElementById('folder-name').value.trim();
@@ -958,14 +1279,12 @@
                     };
                     
                     appData.folders.push(newFolder);
-                    saveData();
+                    
+                    // Автоматически сохраняем изменения
+                    await autoSaveAppData();
+                    
                     showScreen('folders-screen');
                 }
-            });
-            
-            // Назад из просмотра папки
-            document.getElementById('back-from-view-btn').addEventListener('click', () => {
-                showScreen('folders-screen');
             });
             
             // Добавление карточки
@@ -973,7 +1292,7 @@
                 appData.currentCardId = null;
                 document.getElementById('card-question').value = '';
                 document.getElementById('card-answer').value = '';
-                document.querySelector('#edit-card-screen h2').textContent = 'Новая карточка';
+                document.getElementById('edit-card-title').textContent = 'Новая карточка';
                 showScreen('edit-card-screen');
             });
             
@@ -983,7 +1302,7 @@
             });
             
             // Сохранение карточки
-            document.getElementById('card-form').addEventListener('submit', (e) => {
+            document.getElementById('card-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const question = document.getElementById('card-question').value.trim();
@@ -1011,27 +1330,12 @@
                             folder.cards.push(newCard);
                         }
                         
-                        saveData();
+                        // Автоматически сохраняем изменения
+                        await autoSaveAppData();
+                        
                         showScreen('view-folder-screen');
                     }
                 }
-            });
-            
-            // Запуск викторины
-            document.getElementById('start-quiz-btn').addEventListener('click', () => {
-                showScreen('quiz-screen');
-            });
-            
-            // Назад из викторины
-            document.getElementById('back-from-quiz-btn').addEventListener('click', () => {
-                appData.quiz.active = false;
-                showScreen('view-folder-screen');
-            });
-            
-            // Завершение викторины
-            document.getElementById('end-quiz-btn').addEventListener('click', () => {
-                appData.quiz.active = false;
-                showScreen('view-folder-screen');
             });
             
             // Следующий шаг в викторине
@@ -1048,7 +1352,7 @@
             
             // Перезапуск викторины
             document.getElementById('restart-quiz-btn').addEventListener('click', () => {
-                startQuiz();
+                startQuiz(appData.quiz.currentFolderId);
             });
             
             // Навигация через нижнюю панель
@@ -1062,62 +1366,14 @@
                         if (appData.currentFolderId) {
                             showScreen(screenId);
                         } else {
-                            alert('Выберите папку для начала викторины!');
+                            showScreen(screenId);
+                            // Сообщение уже отображается в showScreen
                         }
                     } else {
                         showScreen(screenId);
                     }
                 });
             });
-            
-            // Добавляем несколько тестовых папок и карточек при первом запуске
-            if (appData.folders.length === 0) {
-                const sampleFolders = [
-                    {
-                        id: generateId(),
-                        name: "История России",
-                        color: "#4361ee",
-                        cards: [
-                            {
-                                id: generateId(),
-                                question: "В каком году произошло Крещение Руси?",
-                                answer: "988 год"
-                            },
-                            {
-                                id: generateId(),
-                                question: "Кто был первым императором России?",
-                                answer: "Пётр I"
-                            },
-                            {
-                                id: generateId(),
-                                question: "Когда началась Великая Отечественная война?",
-                                answer: "22 июня 1941 года"
-                            }
-                        ]
-                    },
-                    {
-                        id: generateId(),
-                        name: "Английские слова",
-                        color: "#f72585",
-                        cards: [
-                            {
-                                id: generateId(),
-                                question: "Как переводится слово 'opportunity'?",
-                                answer: "Возможность"
-                            },
-                            {
-                                id: generateId(),
-                                question: "Что означает 'to take for granted'?",
-                                answer: "Принимать как должное"
-                            }
-                        ]
-                    }
-                ];
-                
-                appData.folders = sampleFolders;
-                saveData();
-                renderFolders();
-            }
         });
     </script>
 </body>
