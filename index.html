@@ -1,39 +1,1123 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Моя визитка в Telegram</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Карточки для обучения</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 16px;
+            margin: 0 auto;
+        }
+        
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header h1 i {
+            font-size: 1.6rem;
+        }
+        
+        /* Основные экраны */
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover, .btn:active {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover, .btn-outline:active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover, .btn-danger:active {
+            background-color: #d1145a;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover, .btn-success:active {
+            background-color: #2bb2d9;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover, .btn-warning:active {
+            background-color: #e07c0c;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Карточки папок */
+        .folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .folder-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            cursor: pointer;
+            min-height: 140px;
+            position: relative;
+        }
+        
+        .folder-card:hover, .folder-card:active {
+            transform: translateY(-5px);
+        }
+        
+        .folder-color {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            color: white;
+            font-size: 1.8rem;
+        }
+        
+        .folder-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        
+        .folder-count {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .folder-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        /* Формы */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: var(--transition);
+        }
+        
+        .color-option.selected {
+            border-color: var(--dark);
+            transform: scale(1.1);
+        }
+        
+        /* Карточки вопросов */
+        .cards-list {
+            margin-top: 20px;
+        }
+        
+        .card-item {
+            background-color: white;
+            border-radius: var(--border-radius);
             padding: 20px;
-            font-family: sans-serif;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #222222);
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+        
+        .card-item:hover {
+            transform: translateY(-3px);
+        }
+        
+        .card-question {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+        
+        .card-answer {
+            padding-top: 12px;
+            border-top: 1px dashed var(--gray-light);
+            color: var(--gray);
+        }
+        
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* Викторина */
+        .quiz-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px 24px;
+            box-shadow: var(--shadow);
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .quiz-card h3 {
+            font-size: 1.2rem;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+        
+        .quiz-content {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 20px 0;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.8;
+        }
+        
+        .quiz-progress {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 20px;
+        }
+        
+        /* Навигация */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .nav-buttons .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        /* Пустой state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--gray-light);
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Нижняя панель */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: var(--transition);
+            flex: 1;
+        }
+        
+        .nav-item i {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 16px 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .folders-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            
+            .quiz-card {
+                min-height: 350px;
+                padding: 20px 16px;
+            }
+            
+            .quiz-content {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* Утилиты */
+        .text-center {
+            text-align: center;
+        }
+        
+        .mt-20 {
+            margin-top: 20px;
+        }
+        
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease;
         }
     </style>
 </head>
 <body>
-    <h1>Привет, <span id="user-name">гость</span>!</h1>
-    <p>Это моя тестовая визитка внутри Telegram.</p>
-    <p>Мой телефон: +7 123 456-78-90</p>
-    <button onclick="alert('Кнопка работает!')">Нажми меня</button>
+    <!-- Шапка -->
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-layer-group"></i> Учебные карточки</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Экран со списком папок -->
+        <div id="folders-screen" class="screen active">
+            <h2 class="mb-20">Мои папки</h2>
+            
+            <button id="add-folder-btn" class="btn btn-success">
+                <i class="fas fa-plus-circle"></i> Создать папку
+            </button>
+            
+            <div id="folders-container" class="folders-grid">
+                <!-- Папки будут добавляться сюда -->
+            </div>
+            
+            <div id="empty-folders" class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>Нет созданных папок</h3>
+                <p>Создайте первую папку для хранения карточек</p>
+            </div>
+        </div>
+        
+        <!-- Экран создания/редактирования папки -->
+        <div id="edit-folder-screen" class="screen">
+            <h2 class="mb-20">Новая папка</h2>
+            
+            <form id="folder-form">
+                <div class="form-group">
+                    <label for="folder-name">Название папки</label>
+                    <input type="text" id="folder-name" class="form-control" placeholder="Например: История России" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Цвет папки</label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background-color: #4361ee;" data-color="#4361ee"></div>
+                        <div class="color-option" style="background-color: #f72585;" data-color="#f72585"></div>
+                        <div class="color-option" style="background-color: #4cc9f0;" data-color="#4cc9f0"></div>
+                        <div class="color-option" style="background-color: #f8961e;" data-color="#f8961e"></div>
+                        <div class="color-option" style="background-color: #2ec4b6;" data-color="#2ec4b6"></div>
+                        <div class="color-option" style="background-color: #9d4edd;" data-color="#9d4edd"></div>
+                    </div>
+                    <input type="hidden" id="folder-color" value="#4361ee">
+                </div>
+                
+                <div class="nav-buttons">
+                    <button type="button" id="cancel-folder-btn" class="btn btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-success">Сохранить папку</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Экран просмотра карточек в папке -->
+        <div id="view-folder-screen" class="screen">
+            <div class="nav-buttons">
+                <button id="back-from-view-btn" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <button id="start-quiz-btn" class="btn btn-success">
+                    <i class="fas fa-play-circle"></i> Викторина
+                </button>
+            </div>
+            
+            <h2 id="view-folder-title" class="mb-20"></h2>
+            
+            <button id="add-card-btn" class="btn">
+                <i class="fas fa-plus-circle"></i> Добавить карточку
+            </button>
+            
+            <div id="cards-container" class="cards-list">
+                <!-- Карточки будут добавляться сюда -->
+            </div>
+            
+            <div id="empty-cards" class="empty-state">
+                <i class="fas fa-sticky-note"></i>
+                <h3>Нет карточек в этой папке</h3>
+                <p>Добавьте первую карточку с вопросом и ответом</p>
+            </div>
+        </div>
+        
+        <!-- Экран создания/редактирования карточки -->
+        <div id="edit-card-screen" class="screen">
+            <h2 class="mb-20">Новая карточка</h2>
+            
+            <form id="card-form">
+                <div class="form-group">
+                    <label for="card-question">Вопрос</label>
+                    <textarea id="card-question" class="form-control" rows="4" placeholder="Введите вопрос..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card-answer">Ответ</label>
+                    <textarea id="card-answer" class="form-control" rows="4" placeholder="Введите ответ..." required></textarea>
+                </div>
+                
+                <div class="nav-buttons">
+                    <button type="button" id="cancel-card-btn" class="btn btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-success">Сохранить карточку</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Экран викторины -->
+        <div id="quiz-screen" class="screen">
+            <div class="nav-buttons">
+                <button id="back-from-quiz-btn" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <button id="end-quiz-btn" class="btn btn-danger">
+                    <i class="fas fa-stop-circle"></i> Завершить
+                </button>
+            </div>
+            
+            <h2 id="quiz-folder-title" class="mb-20"></h2>
+            
+            <div class="quiz-card">
+                <h3 id="quiz-state-label">Вопрос</h3>
+                <div id="quiz-content" class="quiz-content">
+                    <!-- Здесь будет отображаться вопрос или ответ -->
+                </div>
+                <div id="quiz-progress" class="quiz-progress">
+                    <!-- Прогресс викторины -->
+                </div>
+            </div>
+            
+            <button id="quiz-next-btn" class="btn btn-success">
+                Показать ответ
+            </button>
+            
+            <div id="quiz-completed" class="empty-state hidden">
+                <i class="fas fa-trophy"></i>
+                <h3>Викторина завершена!</h3>
+                <p>Вы повторили все карточки из этой папки</p>
+                <button id="restart-quiz-btn" class="btn btn-success mt-20">
+                    <i class="fas fa-redo"></i> Начать заново
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Нижняя панель навигации -->
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active" data-screen="folders-screen">
+            <i class="fas fa-layer-group"></i>
+            <span>Папки</span>
+        </a>
+        <a href="#" class="nav-item" data-screen="quiz-screen" id="quiz-nav">
+            <i class="fas fa-play-circle"></i>
+            <span>Викторина</span>
+        </a>
+    </div>
 
     <script>
-        // Инициализируем приложение
-        let tg = window.Telegram.WebApp;
-        tg.expand(); // Раскрываем на весь экран
-
-        // Используем данные пользователя из Telegram
-        let user = tg.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('user-name').textContent = user.first_name;
+        // Хранение данных в памяти
+        let appData = {
+            folders: [],
+            currentFolderId: null,
+            currentCardId: null,
+            quiz: {
+                active: false,
+                currentFolderId: null,
+                remainingCards: [],
+                currentCard: null,
+                showAnswer: false
+            }
+        };
+        
+        // Загрузка данных из localStorage (если есть)
+        function loadData() {
+            const savedData = localStorage.getItem('flashcardsAppData');
+            if (savedData) {
+                appData = JSON.parse(savedData);
+            }
         }
-
-        // Кнопка "Закрыть"
-        tg.MainButton.setText("Закрыть").show();
-        tg.MainButton.onClick(function() {
-            tg.close();
+        
+        // Сохранение данных в localStorage
+        function saveData() {
+            localStorage.setItem('flashcardsAppData', JSON.stringify(appData));
+        }
+        
+        // Переключение между экранами
+        function showScreen(screenId) {
+            // Скрываем все экраны
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Показываем нужный экран
+            document.getElementById(screenId).classList.add('active');
+            
+            // Обновляем активную кнопку в нижней панели
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (screenId === 'folders-screen') {
+                document.querySelector('.nav-item[data-screen="folders-screen"]').classList.add('active');
+            }
+            
+            // Обновляем данные на экране
+            if (screenId === 'folders-screen') {
+                renderFolders();
+            } else if (screenId === 'view-folder-screen' && appData.currentFolderId !== null) {
+                const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+                if (folder) {
+                    document.getElementById('view-folder-title').textContent = folder.name;
+                    document.getElementById('view-folder-title').style.color = folder.color;
+                    renderCards();
+                }
+            } else if (screenId === 'quiz-screen' && appData.quiz.currentFolderId !== null) {
+                const folder = appData.folders.find(f => f.id === appData.quiz.currentFolderId);
+                if (folder) {
+                    document.getElementById('quiz-folder-title').textContent = `Викторина: ${folder.name}`;
+                    document.getElementById('quiz-folder-title').style.color = folder.color;
+                }
+                
+                // Если викторина не активна, начинаем новую
+                if (!appData.quiz.active) {
+                    startQuiz();
+                } else {
+                    updateQuizDisplay();
+                }
+            }
+        }
+        
+        // Генерация ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // Отображение списка папок
+        function renderFolders() {
+            const container = document.getElementById('folders-container');
+            const emptyState = document.getElementById('empty-folders');
+            
+            if (appData.folders.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+            
+            appData.folders.forEach(folder => {
+                const folderElement = document.createElement('div');
+                folderElement.className = 'folder-card';
+                folderElement.innerHTML = `
+                    <div class="folder-actions">
+                        <button class="btn btn-icon btn-small delete-folder" data-folder-id="${folder.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="folder-color" style="background-color: ${folder.color};">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">${folder.name}</div>
+                    <div class="folder-count">${folder.cards.length} карточек</div>
+                `;
+                
+                folderElement.addEventListener('click', () => {
+                    openFolder(folder.id);
+                });
+                
+                container.appendChild(folderElement);
+            });
+            
+            // Добавляем обработчики для кнопок удаления
+            document.querySelectorAll('.delete-folder').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const folderId = btn.getAttribute('data-folder-id');
+                    deleteFolder(folderId);
+                });
+            });
+        }
+        
+        // Открытие папки для просмотра карточек
+        function openFolder(folderId) {
+            appData.currentFolderId = folderId;
+            showScreen('view-folder-screen');
+        }
+        
+        // Удаление папки
+        function deleteFolder(folderId) {
+            if (confirm('Вы уверены, что хотите удалить эту папку со всеми карточками?')) {
+                appData.folders = appData.folders.filter(f => f.id !== folderId);
+                saveData();
+                renderFolders();
+            }
+        }
+        
+        // Отображение карточек в папке
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            const emptyState = document.getElementById('empty-cards');
+            const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+            
+            if (!folder || folder.cards.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+            
+            folder.cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-item';
+                cardElement.innerHTML = `
+                    <div class="card-question">${card.question}</div>
+                    <div class="card-answer">${card.answer}</div>
+                    <div class="card-actions">
+                        <button class="btn btn-small btn-outline edit-card" data-card-id="${card.id}">
+                            <i class="fas fa-edit"></i> Изменить
+                        </button>
+                        <button class="btn btn-small btn-danger delete-card" data-card-id="${card.id}">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(cardElement);
+            });
+            
+            // Добавляем обработчики для кнопок карточек
+            document.querySelectorAll('.edit-card').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const cardId = btn.getAttribute('data-card-id');
+                    editCard(cardId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-card').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const cardId = btn.getAttribute('data-card-id');
+                    deleteCard(cardId);
+                });
+            });
+        }
+        
+        // Редактирование карточки
+        function editCard(cardId) {
+            appData.currentCardId = cardId;
+            const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+            const card = folder.cards.find(c => c.id === cardId);
+            
+            if (card) {
+                document.getElementById('card-question').value = card.question;
+                document.getElementById('card-answer').value = card.answer;
+                document.querySelector('#edit-card-screen h2').textContent = 'Редактировать карточку';
+                showScreen('edit-card-screen');
+            }
+        }
+        
+        // Удаление карточки
+        function deleteCard(cardId) {
+            if (confirm('Вы уверены, что хотите удалить эту карточку?')) {
+                const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+                if (folder) {
+                    folder.cards = folder.cards.filter(c => c.id !== cardId);
+                    saveData();
+                    renderCards();
+                }
+            }
+        }
+        
+        // Начало викторины
+        function startQuiz() {
+            const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+            if (!folder || folder.cards.length === 0) {
+                alert('В этой папке нет карточек для викторины!');
+                showScreen('view-folder-screen');
+                return;
+            }
+            
+            appData.quiz = {
+                active: true,
+                currentFolderId: appData.currentFolderId,
+                remainingCards: [...folder.cards],
+                currentCard: null,
+                showAnswer: false
+            };
+            
+            nextQuizCard();
+            updateQuizDisplay();
+        }
+        
+        // Следующая карточка в викторине
+        function nextQuizCard() {
+            const quiz = appData.quiz;
+            
+            if (quiz.remainingCards.length === 0) {
+                // Викторина завершена
+                quiz.active = false;
+                document.getElementById('quiz-completed').classList.remove('hidden');
+                document.getElementById('quiz-next-btn').classList.add('hidden');
+                return;
+            }
+            
+            // Выбираем случайную карточку из оставшихся
+            const randomIndex = Math.floor(Math.random() * quiz.remainingCards.length);
+            quiz.currentCard = quiz.remainingCards[randomIndex];
+            quiz.showAnswer = false;
+            
+            // Удаляем выбранную карточку из оставшихся
+            quiz.remainingCards.splice(randomIndex, 1);
+            
+            updateQuizDisplay();
+        }
+        
+        // Обновление отображения викторины
+        function updateQuizDisplay() {
+            const quiz = appData.quiz;
+            
+            if (!quiz.currentCard) {
+                return;
+            }
+            
+            const stateLabel = document.getElementById('quiz-state-label');
+            const content = document.getElementById('quiz-content');
+            const nextBtn = document.getElementById('quiz-next-btn');
+            const progress = document.getElementById('quiz-progress');
+            
+            if (quiz.showAnswer) {
+                stateLabel.textContent = 'Ответ';
+                content.textContent = quiz.currentCard.answer;
+                nextBtn.textContent = 'Следующая карточка';
+                nextBtn.classList.remove('btn-success');
+                nextBtn.classList.add('btn-primary');
+            } else {
+                stateLabel.textContent = 'Вопрос';
+                content.textContent = quiz.currentCard.question;
+                nextBtn.textContent = 'Показать ответ';
+                nextBtn.classList.remove('btn-primary');
+                nextBtn.classList.add('btn-success');
+            }
+            
+            const folder = appData.folders.find(f => f.id === quiz.currentFolderId);
+            const totalCards = folder ? folder.cards.length : 0;
+            const remaining = quiz.remainingCards.length + (quiz.currentCard ? 1 : 0);
+            
+            progress.textContent = `Карточка ${totalCards - remaining + 1} из ${totalCards}`;
+            
+            // Скрываем завершение викторины, если оно отображается
+            document.getElementById('quiz-completed').classList.add('hidden');
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+        
+        // Обработчики событий при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderFolders();
+            
+            // Выбор цвета папки
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    option.classList.add('selected');
+                    document.getElementById('folder-color').value = option.getAttribute('data-color');
+                });
+            });
+            
+            // Создание папки
+            document.getElementById('add-folder-btn').addEventListener('click', () => {
+                document.getElementById('folder-name').value = '';
+                document.querySelector('#edit-folder-screen h2').textContent = 'Новая папка';
+                showScreen('edit-folder-screen');
+            });
+            
+            // Отмена создания папки
+            document.getElementById('cancel-folder-btn').addEventListener('click', () => {
+                showScreen('folders-screen');
+            });
+            
+            // Сохранение папки
+            document.getElementById('folder-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('folder-name').value.trim();
+                const color = document.getElementById('folder-color').value;
+                
+                if (name) {
+                    const newFolder = {
+                        id: generateId(),
+                        name,
+                        color,
+                        cards: []
+                    };
+                    
+                    appData.folders.push(newFolder);
+                    saveData();
+                    showScreen('folders-screen');
+                }
+            });
+            
+            // Назад из просмотра папки
+            document.getElementById('back-from-view-btn').addEventListener('click', () => {
+                showScreen('folders-screen');
+            });
+            
+            // Добавление карточки
+            document.getElementById('add-card-btn').addEventListener('click', () => {
+                appData.currentCardId = null;
+                document.getElementById('card-question').value = '';
+                document.getElementById('card-answer').value = '';
+                document.querySelector('#edit-card-screen h2').textContent = 'Новая карточка';
+                showScreen('edit-card-screen');
+            });
+            
+            // Отмена создания карточки
+            document.getElementById('cancel-card-btn').addEventListener('click', () => {
+                showScreen('view-folder-screen');
+            });
+            
+            // Сохранение карточки
+            document.getElementById('card-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const question = document.getElementById('card-question').value.trim();
+                const answer = document.getElementById('card-answer').value.trim();
+                
+                if (question && answer) {
+                    const folder = appData.folders.find(f => f.id === appData.currentFolderId);
+                    
+                    if (folder) {
+                        if (appData.currentCardId) {
+                            // Редактирование существующей карточки
+                            const card = folder.cards.find(c => c.id === appData.currentCardId);
+                            if (card) {
+                                card.question = question;
+                                card.answer = answer;
+                            }
+                        } else {
+                            // Создание новой карточки
+                            const newCard = {
+                                id: generateId(),
+                                question,
+                                answer
+                            };
+                            
+                            folder.cards.push(newCard);
+                        }
+                        
+                        saveData();
+                        showScreen('view-folder-screen');
+                    }
+                }
+            });
+            
+            // Запуск викторины
+            document.getElementById('start-quiz-btn').addEventListener('click', () => {
+                showScreen('quiz-screen');
+            });
+            
+            // Назад из викторины
+            document.getElementById('back-from-quiz-btn').addEventListener('click', () => {
+                appData.quiz.active = false;
+                showScreen('view-folder-screen');
+            });
+            
+            // Завершение викторины
+            document.getElementById('end-quiz-btn').addEventListener('click', () => {
+                appData.quiz.active = false;
+                showScreen('view-folder-screen');
+            });
+            
+            // Следующий шаг в викторине
+            document.getElementById('quiz-next-btn').addEventListener('click', () => {
+                if (appData.quiz.showAnswer) {
+                    // Переходим к следующей карточке
+                    nextQuizCard();
+                } else {
+                    // Показываем ответ
+                    appData.quiz.showAnswer = true;
+                    updateQuizDisplay();
+                }
+            });
+            
+            // Перезапуск викторины
+            document.getElementById('restart-quiz-btn').addEventListener('click', () => {
+                startQuiz();
+            });
+            
+            // Навигация через нижнюю панель
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const screenId = item.getAttribute('data-screen');
+                    
+                    if (screenId === 'quiz-screen') {
+                        // Для викторины нужна активная папка
+                        if (appData.currentFolderId) {
+                            showScreen(screenId);
+                        } else {
+                            alert('Выберите папку для начала викторины!');
+                        }
+                    } else {
+                        showScreen(screenId);
+                    }
+                });
+            });
+            
+            // Добавляем несколько тестовых папок и карточек при первом запуске
+            if (appData.folders.length === 0) {
+                const sampleFolders = [
+                    {
+                        id: generateId(),
+                        name: "История России",
+                        color: "#4361ee",
+                        cards: [
+                            {
+                                id: generateId(),
+                                question: "В каком году произошло Крещение Руси?",
+                                answer: "988 год"
+                            },
+                            {
+                                id: generateId(),
+                                question: "Кто был первым императором России?",
+                                answer: "Пётр I"
+                            },
+                            {
+                                id: generateId(),
+                                question: "Когда началась Великая Отечественная война?",
+                                answer: "22 июня 1941 года"
+                            }
+                        ]
+                    },
+                    {
+                        id: generateId(),
+                        name: "Английские слова",
+                        color: "#f72585",
+                        cards: [
+                            {
+                                id: generateId(),
+                                question: "Как переводится слово 'opportunity'?",
+                                answer: "Возможность"
+                            },
+                            {
+                                id: generateId(),
+                                question: "Что означает 'to take for granted'?",
+                                answer: "Принимать как должное"
+                            }
+                        ]
+                    }
+                ];
+                
+                appData.folders = sampleFolders;
+                saveData();
+                renderFolders();
+            }
         });
     </script>
 </body>
