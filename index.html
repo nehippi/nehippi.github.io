@@ -10,7 +10,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
         
@@ -107,7 +107,7 @@
             box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
         }
         
-        .btn:hover, .btn:active {
+        .btn:active {
             background-color: var(--secondary);
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(67, 97, 238, 0.3);
@@ -120,7 +120,7 @@
             box-shadow: none;
         }
         
-        .btn-outline:hover, .btn-outline:active {
+        .btn-outline:active {
             background-color: var(--primary);
             color: white;
         }
@@ -130,7 +130,7 @@
             box-shadow: 0 4px 12px rgba(247, 37, 133, 0.2);
         }
         
-        .btn-danger:hover, .btn-danger:active {
+        .btn-danger:active {
             background-color: #d1145a;
         }
         
@@ -139,7 +139,7 @@
             box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
         }
         
-        .btn-success:hover, .btn-success:active {
+        .btn-success:active {
             background-color: #2bb2d9;
         }
         
@@ -182,7 +182,7 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
-        .folder-card:hover, .folder-card:active {
+        .folder-card:active {
             transform: translateY(-5px) scale(1.02);
         }
         
@@ -287,7 +287,7 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
-        .card-item:hover {
+        .card-item:active {
             transform: translateY(-3px);
         }
         
@@ -513,6 +513,26 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        
+        .sync-status {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            background: var(--success);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 101;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 2px 8px rgba(76, 201, 240, 0.3);
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -664,175 +684,406 @@
     </div>
 
     <script>
-        // ====================== КЛАСС ДЛЯ РАБОТЫ С INDEXEDDB ======================
-        class FlashcardDB {
+        // ====================== УЛУЧШЕННЫЙ КЛАСС ДЛЯ ХРАНЕНИЯ ДАННЫХ ======================
+        class FlashcardStorage {
             constructor() {
-                this.db = null;
-                this.dbName = 'FlashcardsDB';
-                this.storeName = 'flashcards';
-                this.version = 1;
+                this.storeName = 'flashcardsApp';
+                this.backupStoreName = 'flashcardsBackup';
                 this.isInitialized = false;
                 this.autoSaveTimeout = null;
-                this.autoSaveDelay = 1000; // Сохраняем через 1 секунду после изменений
+                this.autoSaveDelay = 500; // Уменьшили задержку для более быстрого сохранения
+                this.lastSaveTime = null;
+                
+                // Статистика
+                this.stats = {
+                    saveAttempts: 0,
+                    saveSuccess: 0,
+                    saveErrors: 0,
+                    loadAttempts: 0,
+                    loadSuccess: 0,
+                    loadErrors: 0
+                };
             }
             
-            // Инициализация базы данных
+            // Инициализация всех хранилищ
             async init() {
-                return new Promise((resolve, reject) => {
-                    if (this.isInitialized) {
-                        resolve();
-                        return;
+                if (this.isInitialized) return;
+                
+                // Пытаемся использовать все доступные хранилища
+                try {
+                    // Проверяем доступность IndexedDB
+                    if ('indexedDB' in window) {
+                        await this.initIndexedDB();
+                        console.log('IndexedDB инициализирован');
+                    } else {
+                        console.warn('IndexedDB не поддерживается');
                     }
                     
-                    const request = indexedDB.open(this.dbName, this.version);
+                    // Всегда инициализируем localStorage как резервное хранилище
+                    this.initLocalStorage();
+                    
+                    this.isInitialized = true;
+                    console.log('Хранилище инициализировано');
+                } catch (error) {
+                    console.error('Ошибка инициализации хранилища:', error);
+                    // Пытаемся использовать хотя бы localStorage
+                    this.initLocalStorage();
+                    this.isInitialized = true;
+                }
+            }
+            
+            // Инициализация IndexedDB
+            async initIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('FlashcardsDB', 2);
                     
                     request.onupgradeneeded = (event) => {
                         const db = event.target.result;
                         
-                        // Создаем хранилище объектов, если его нет
+                        // Создаем хранилище для основных данных
                         if (!db.objectStoreNames.contains(this.storeName)) {
-                            const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-                            console.log('Хранилище создано');
+                            db.createObjectStore(this.storeName, { keyPath: 'id' });
+                        }
+                        
+                        // Создаем хранилище для резервных копий
+                        if (!db.objectStoreNames.contains(this.backupStoreName)) {
+                            db.createObjectStore(this.backupStoreName, { keyPath: 'id' });
                         }
                     };
                     
                     request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        this.isInitialized = true;
-                        console.log('База данных инициализирована');
+                        this.indexedDB = event.target.result;
                         resolve();
                     };
                     
                     request.onerror = (event) => {
-                        console.error('Ошибка открытия базы данных:', event.target.error);
-                        reject(new Error('Не удалось открыть базу данных'));
+                        console.error('Ошибка открытия IndexedDB:', event.target.error);
+                        reject(event.target.error);
                     };
                 });
             }
             
-            // Автоматическое сохранение (с debounce)
+            // Инициализация localStorage
+            initLocalStorage() {
+                this.localStorageAvailable = typeof localStorage !== 'undefined';
+                if (this.localStorageAvailable) {
+                    console.log('localStorage доступен');
+                }
+            }
+            
+            // Основной метод сохранения данных
+            async save(data) {
+                this.stats.saveAttempts++;
+                
+                const dataToSave = {
+                    id: 'appData',
+                    folders: data.folders || [],
+                    lastSaved: new Date().toISOString(),
+                    version: '2.0'
+                };
+                
+                let saveSuccess = false;
+                let errors = [];
+                
+                // Пробуем сохранить в IndexedDB
+                if (this.indexedDB) {
+                    try {
+                        await this.saveToIndexedDB(dataToSave);
+                        saveSuccess = true;
+                        this.stats.saveSuccess++;
+                        console.log('Данные сохранены в IndexedDB');
+                    } catch (error) {
+                        errors.push(`IndexedDB: ${error.message}`);
+                        this.stats.saveErrors++;
+                        console.warn('Не удалось сохранить в IndexedDB:', error);
+                    }
+                }
+                
+                // Всегда сохраняем в localStorage как резервную копию
+                if (this.localStorageAvailable) {
+                    try {
+                        this.saveToLocalStorage(dataToSave);
+                        if (!saveSuccess) {
+                            saveSuccess = true;
+                            this.stats.saveSuccess++;
+                        }
+                        console.log('Данные сохранены в localStorage');
+                    } catch (error) {
+                        errors.push(`localStorage: ${error.message}`);
+                        this.stats.saveErrors++;
+                        console.warn('Не удалось сохранить в localStorage:', error);
+                    }
+                }
+                
+                // Создаем дополнительную резервную копию в IndexedDB
+                if (this.indexedDB && saveSuccess) {
+                    try {
+                        await this.createBackup(dataToSave);
+                        console.log('Резервная копия создана');
+                    } catch (error) {
+                        console.warn('Не удалось создать резервную копию:', error);
+                    }
+                }
+                
+                this.lastSaveTime = new Date();
+                
+                return {
+                    success: saveSuccess,
+                    errors: errors,
+                    timestamp: this.lastSaveTime
+                };
+            }
+            
+            // Сохранение в IndexedDB
+            async saveToIndexedDB(data) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.indexedDB.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.put(data);
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(new Error(event.target.error));
+                });
+            }
+            
+            // Создание резервной копии в IndexedDB
+            async createBackup(data) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.indexedDB.transaction([this.backupStoreName], 'readwrite');
+                    const store = transaction.objectStore(this.backupStoreName);
+                    
+                    const backupData = {
+                        ...data,
+                        id: `backup_${Date.now()}`
+                    };
+                    
+                    const request = store.put(backupData);
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(new Error(event.target.error));
+                });
+            }
+            
+            // Сохранение в localStorage
+            saveToLocalStorage(data) {
+                try {
+                    localStorage.setItem(this.storeName, JSON.stringify(data));
+                    // Также сохраняем отдельно для совместимости со старыми версиями
+                    localStorage.setItem('flashcardsData', JSON.stringify(data.folders || []));
+                    return true;
+                } catch (error) {
+                    // Если localStorage переполнен, пытаемся очистить старые данные
+                    try {
+                        localStorage.removeItem('flashcardsBackup');
+                        localStorage.setItem(this.storeName, JSON.stringify(data));
+                        return true;
+                    } catch (e) {
+                        throw new Error('localStorage переполнен');
+                    }
+                }
+            }
+            
+            // Основной метод загрузки данных
+            async load() {
+                this.stats.loadAttempts++;
+                
+                let loadedData = null;
+                let source = '';
+                
+                // Пробуем загрузить из IndexedDB
+                if (this.indexedDB) {
+                    try {
+                        loadedData = await this.loadFromIndexedDB();
+                        if (loadedData && loadedData.folders) {
+                            source = 'IndexedDB';
+                            this.stats.loadSuccess++;
+                            console.log('Данные загружены из IndexedDB');
+                        }
+                    } catch (error) {
+                        console.warn('Не удалось загрузить из IndexedDB:', error);
+                        this.stats.loadErrors++;
+                    }
+                }
+                
+                // Если из IndexedDB не удалось, пробуем localStorage
+                if (!loadedData && this.localStorageAvailable) {
+                    try {
+                        loadedData = this.loadFromLocalStorage();
+                        if (loadedData && loadedData.folders) {
+                            source = source ? `${source} + localStorage` : 'localStorage';
+                            if (!this.stats.loadSuccess) this.stats.loadSuccess++;
+                            console.log('Данные загружены из localStorage');
+                        }
+                    } catch (error) {
+                        console.warn('Не удалось загрузить из localStorage:', error);
+                        if (!this.stats.loadErrors) this.stats.loadErrors++;
+                    }
+                }
+                
+                // Если все еще нет данных, пробуем загрузить резервную копию из IndexedDB
+                if (!loadedData && this.indexedDB) {
+                    try {
+                        loadedData = await this.loadFromBackup();
+                        if (loadedData && loadedData.folders) {
+                            source = 'Backup';
+                            if (!this.stats.loadSuccess) this.stats.loadSuccess++;
+                            console.log('Данные загружены из резервной копии');
+                        }
+                    } catch (error) {
+                        console.warn('Не удалось загрузить из резервной копии:', error);
+                    }
+                }
+                
+                // Если совсем нет данных, возвращаем пустую структуру
+                if (!loadedData) {
+                    loadedData = {
+                        folders: [],
+                        lastSaved: null,
+                        version: '2.0'
+                    };
+                    source = 'New';
+                    console.log('Созданы новые данные');
+                }
+                
+                return {
+                    data: loadedData,
+                    source: source,
+                    stats: this.stats
+                };
+            }
+            
+            // Загрузка из IndexedDB
+            async loadFromIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.indexedDB.transaction([this.storeName], 'readonly');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.get('appData');
+                    
+                    request.onsuccess = (event) => {
+                        resolve(event.target.result);
+                    };
+                    
+                    request.onerror = (event) => {
+                        reject(new Error(event.target.error));
+                    };
+                });
+            }
+            
+            // Загрузка из резервной копии
+            async loadFromBackup() {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.indexedDB.transaction([this.backupStoreName], 'readonly');
+                    const store = transaction.objectStore(this.backupStoreName);
+                    const request = store.openCursor(null, 'prev'); // Берем последнюю резервную копию
+                    
+                    let latestBackup = null;
+                    
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            latestBackup = cursor.value;
+                            cursor.continue();
+                        } else {
+                            resolve(latestBackup);
+                        }
+                    };
+                    
+                    request.onerror = (event) => {
+                        reject(new Error(event.target.error));
+                    };
+                });
+            }
+            
+            // Загрузка из localStorage
+            loadFromLocalStorage() {
+                try {
+                    // Пробуем загрузить из новой структуры
+                    const data = localStorage.getItem(this.storeName);
+                    if (data) {
+                        return JSON.parse(data);
+                    }
+                    
+                    // Пробуем загрузить из старой структуры (для совместимости)
+                    const oldData = localStorage.getItem('flashcardsData');
+                    if (oldData) {
+                        return {
+                            folders: JSON.parse(oldData),
+                            lastSaved: new Date().toISOString(),
+                            version: '1.0'
+                        };
+                    }
+                    
+                    return null;
+                } catch (error) {
+                    throw new Error('Ошибка чтения из localStorage');
+                }
+            }
+            
+            // Автоматическое сохранение с debounce
             async autoSave(data) {
                 if (!this.isInitialized) {
                     await this.init();
                 }
                 
-                // Отменяем предыдущий таймер, если есть
                 if (this.autoSaveTimeout) {
                     clearTimeout(this.autoSaveTimeout);
                 }
                 
-                // Устанавливаем новый таймер для сохранения
                 this.autoSaveTimeout = setTimeout(async () => {
-                    await this.saveAllData(data);
+                    await this.save(data);
+                    this.showSyncStatus('Сохранено');
                 }, this.autoSaveDelay);
             }
             
-            // Сохранение всех данных приложения
-            async saveAllData(appData) {
-                return new Promise((resolve, reject) => {
-                    if (!this.isInitialized) {
-                        reject(new Error('База данных не инициализирована'));
-                        return;
+            // Показать статус синхронизации
+            showSyncStatus(message) {
+                // Удаляем предыдущий статус, если есть
+                const existingStatus = document.querySelector('.sync-status');
+                if (existingStatus) {
+                    existingStatus.remove();
+                }
+                
+                // Создаем новый элемент статуса
+                const statusEl = document.createElement('div');
+                statusEl.className = 'sync-status';
+                statusEl.textContent = message;
+                document.body.appendChild(statusEl);
+                
+                // Автоматически скрываем через 2 секунды
+                setTimeout(() => {
+                    if (statusEl.parentNode) {
+                        statusEl.style.opacity = '0';
+                        statusEl.style.transition = 'opacity 0.3s ease';
+                        setTimeout(() => {
+                            if (statusEl.parentNode) {
+                                statusEl.remove();
+                            }
+                        }, 300);
                     }
-                    
-                    const transaction = this.db.transaction([this.storeName], 'readwrite');
-                    const store = transaction.objectStore(this.storeName);
-                    
-                    // Сохраняем полное состояние приложения
-                    const dataToSave = {
-                        id: 'appState',
-                        folders: appData.folders,
-                        lastSaved: new Date().toISOString()
-                    };
-                    
-                    const request = store.put(dataToSave);
-                    
-                    request.onsuccess = () => {
-                        console.log('Данные сохранены в IndexedDB');
-                        resolve();
-                    };
-                    
-                    request.onerror = (event) => {
-                        console.error('Ошибка сохранения данных:', event.target.error);
-                        reject(new Error('Не удалось сохранить данные'));
-                    };
-                });
-            }
-            
-            // Загрузка всех данных приложения
-            async loadAllData() {
-                return new Promise(async (resolve, reject) => {
-                    if (!this.isInitialized) {
-                        await this.init();
-                    }
-                    
-                    const transaction = this.db.transaction([this.storeName], 'readonly');
-                    const store = transaction.objectStore(this.storeName);
-                    const request = store.get('appState');
-                    
-                    request.onsuccess = (event) => {
-                        const result = event.target.result;
-                        
-                        if (result && result.folders) {
-                            console.log('Данные загружены из IndexedDB');
-                            resolve({
-                                folders: result.folders,
-                                currentFolderId: null,
-                                currentCardId: null,
-                                quiz: {
-                                    active: false,
-                                    currentFolderId: null,
-                                    remainingCards: [],
-                                    currentCard: null,
-                                    showAnswer: false
-                                }
-                            });
-                        } else {
-                            console.log('Нет сохраненных данных, возвращаем пустое состояние');
-                            resolve({
-                                folders: [],
-                                currentFolderId: null,
-                                currentCardId: null,
-                                quiz: {
-                                    active: false,
-                                    currentFolderId: null,
-                                    remainingCards: [],
-                                    currentCard: null,
-                                    showAnswer: false
-                                }
-                            });
-                        }
-                    };
-                    
-                    request.onerror = (event) => {
-                        console.error('Ошибка загрузки данных:', event.target.error);
-                        reject(new Error('Не удалось загрузить данные'));
-                    };
-                });
+                }, 2000);
             }
             
             // Очистка всех данных (для отладки)
-            async clearAllData() {
-                return new Promise((resolve, reject) => {
-                    if (!this.isInitialized) {
-                        reject(new Error('База данных не инициализирована'));
-                        return;
+            async clearAll() {
+                if (this.indexedDB) {
+                    try {
+                        const transaction = this.indexedDB.transaction([this.storeName, this.backupStoreName], 'readwrite');
+                        transaction.objectStore(this.storeName).clear();
+                        transaction.objectStore(this.backupStoreName).clear();
+                    } catch (error) {
+                        console.error('Ошибка очистки IndexedDB:', error);
                     }
-                    
-                    const transaction = this.db.transaction([this.storeName], 'readwrite');
-                    const store = transaction.objectStore(this.storeName);
-                    const request = store.clear();
-                    
-                    request.onsuccess = () => {
-                        console.log('Все данные очищены');
-                        resolve();
-                    };
-                    
-                    request.onerror = (event) => {
-                        console.error('Ошибка очистки данных:', event.target.error);
-                        reject(new Error('Не удалось очистить данные'));
-                    };
-                });
+                }
+                
+                if (this.localStorageAvailable) {
+                    try {
+                        localStorage.removeItem(this.storeName);
+                        localStorage.removeItem('flashcardsData');
+                        localStorage.removeItem('flashcardsBackup');
+                    } catch (error) {
+                        console.error('Ошибка очистки localStorage:', error);
+                    }
+                }
             }
         }
         
@@ -850,41 +1101,62 @@
             }
         };
         
-        // Инициализация базы данных
-        const flashcardDB = new FlashcardDB();
+        // Инициализация хранилища
+        const storage = new FlashcardStorage();
+        
+        // Генерация уникального ID
+        function generateId() {
+            return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
         
         // Загрузка данных при запуске
         async function loadInitialData() {
             try {
-                // Показываем экран загрузки
                 showScreen('loading-screen');
                 
-                // Загружаем данные из IndexedDB
-                const loadedData = await flashcardDB.loadAllData();
-                appData = loadedData;
+                // Инициализируем хранилище
+                await storage.init();
                 
-                // Если нет данных, создаем пример папки
+                // Загружаем данные
+                const result = await storage.load();
+                const loadedData = result.data;
+                
+                console.log(`Данные загружены из: ${result.source}`);
+                
+                // Восстанавливаем данные
+                if (loadedData.folders && loadedData.folders.length > 0) {
+                    appData.folders = loadedData.folders;
+                    
+                    // Восстанавливаем структуру карточек, если нужно
+                    appData.folders.forEach(folder => {
+                        if (folder.cards && !Array.isArray(folder.cards)) {
+                            folder.cards = [];
+                        }
+                    });
+                }
+                
+                // Создаем примерные данные, если нет сохраненных
                 if (appData.folders.length === 0) {
                     createSampleData();
                     // Сохраняем примерные данные
-                    await flashcardDB.saveAllData(appData);
+                    await storage.save(appData);
                 }
                 
-                // Скрываем экран загрузки и показываем основной экран
+                // Показываем основной экран
                 setTimeout(() => {
                     showScreen('folders-screen');
                     renderFolders();
                 }, 500);
                 
             } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                // В случае ошибки показываем основной экран с пустыми данными
+                console.error('Критическая ошибка загрузки:', error);
+                // В случае ошибки все равно показываем приложение с пустыми данными
                 showScreen('folders-screen');
                 renderFolders();
             }
         }
         
-        // Создание примерных данных для первого запуска
+        // Создание примерных данных
         function createSampleData() {
             const sampleFolders = [
                 {
@@ -901,11 +1173,6 @@
                             id: generateId(),
                             question: "Кто был первым императором России?",
                             answer: "Пётр I Великий"
-                        },
-                        {
-                            id: generateId(),
-                            question: "Когда началась Великая Отечественная война?",
-                            answer: "22 июня 1941 года"
                         }
                     ]
                 },
@@ -918,16 +1185,6 @@
                             id: generateId(),
                             question: "Как переводится слово 'opportunity'?",
                             answer: "Возможность, шанс"
-                        },
-                        {
-                            id: generateId(),
-                            question: "Что означает выражение 'to take for granted'?",
-                            answer: "Принимать как должное"
-                        },
-                        {
-                            id: generateId(),
-                            question: "Как будет 'устойчивый' по-английски?",
-                            answer: "Sustainable"
                         }
                     ]
                 }
@@ -936,22 +1193,14 @@
             appData.folders = sampleFolders;
         }
         
-        // Генерация уникального ID
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-        
-        // Переключение между экранами
+        // Переключение экранов
         function showScreen(screenId) {
-            // Скрываем все экраны
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
             });
             
-            // Показываем нужный экран
             document.getElementById(screenId).classList.add('active');
             
-            // Обновляем активную кнопку в нижней панели
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
@@ -962,10 +1211,9 @@
                 document.querySelector('.nav-item[data-screen="quiz-screen"]').classList.add('active');
             }
             
-            // Обновляем данные на экране
             if (screenId === 'folders-screen') {
                 renderFolders();
-            } else if (screenId === 'view-folder-screen' && appData.currentFolderId !== null) {
+            } else if (screenId === 'view-folder-screen' && appData.currentFolderId) {
                 const folder = appData.folders.find(f => f.id === appData.currentFolderId);
                 if (folder) {
                     document.getElementById('view-folder-title').textContent = folder.name;
@@ -973,12 +1221,15 @@
                     renderCards();
                 }
             } else if (screenId === 'quiz-screen') {
-                // Если викторина не активна, начинаем новую для текущей папки
                 if (!appData.quiz.active && appData.currentFolderId) {
                     startQuiz(appData.currentFolderId);
                 } else if (!appData.quiz.active) {
-                    // Если нет текущей папки, показываем сообщение
-                    document.getElementById('quiz-content').innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><h3>Выберите папку</h3><p>Для начала викторины откройте папку с карточками</p></div>';
+                    document.getElementById('quiz-content').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <h3>Выберите папку</h3>
+                            <p>Для начала викторины откройте папку с карточками</p>
+                        </div>`;
                     document.getElementById('quiz-next-btn').classList.add('hidden');
                     document.getElementById('quiz-folder-title').textContent = 'Викторина';
                 } else {
@@ -987,16 +1238,16 @@
             }
         }
         
-        // Автоматическое сохранение данных
+        // Автоматическое сохранение
         async function autoSaveAppData() {
             try {
-                await flashcardDB.autoSave(appData);
+                await storage.autoSave(appData);
             } catch (error) {
-                console.error('Ошибка автоматического сохранения:', error);
+                console.error('Ошибка сохранения:', error);
             }
         }
         
-        // Отображение списка папок
+        // Отображение папок
         function renderFolders() {
             const container = document.getElementById('folders-container');
             const emptyState = document.getElementById('empty-folders');
@@ -1023,7 +1274,7 @@
                         <i class="fas fa-folder"></i>
                     </div>
                     <div class="folder-name">${folder.name}</div>
-                    <div class="folder-count">${folder.cards.length} карточек</div>
+                    <div class="folder-count">${folder.cards ? folder.cards.length : 0} карточек</div>
                 `;
                 
                 folderElement.addEventListener('click', () => {
@@ -1033,7 +1284,6 @@
                 container.appendChild(folderElement);
             });
             
-            // Добавляем обработчики для кнопок удаления
             document.querySelectorAll('.delete-folder').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1043,7 +1293,7 @@
             });
         }
         
-        // Открытие папки для просмотра карточек
+        // Открытие папки
         function openFolder(folderId) {
             appData.currentFolderId = folderId;
             showScreen('view-folder-screen');
@@ -1051,18 +1301,15 @@
         
         // Удаление папки
         async function deleteFolder(folderId) {
-            if (confirm('Вы уверены, что хотите удалить эту папку со всеми карточками?')) {
+            if (confirm('Удалить папку со всеми карточками?')) {
                 appData.folders = appData.folders.filter(f => f.id !== folderId);
                 
-                // Если удалили текущую папку, сбрасываем текущую папку
                 if (appData.currentFolderId === folderId) {
                     appData.currentFolderId = null;
                 }
                 
-                // Автоматически сохраняем изменения
                 await autoSaveAppData();
                 
-                // Если мы на экране просмотра папки, возвращаемся к списку папок
                 if (document.getElementById('view-folder-screen').classList.contains('active')) {
                     showScreen('folders-screen');
                 } else {
@@ -1071,13 +1318,13 @@
             }
         }
         
-        // Отображение карточек в папке
+        // Отображение карточек
         function renderCards() {
             const container = document.getElementById('cards-container');
             const emptyState = document.getElementById('empty-cards');
             const folder = appData.folders.find(f => f.id === appData.currentFolderId);
             
-            if (!folder || folder.cards.length === 0) {
+            if (!folder || !folder.cards || folder.cards.length === 0) {
                 container.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 return;
@@ -1105,7 +1352,6 @@
                 container.appendChild(cardElement);
             });
             
-            // Добавляем обработчики для кнопок карточек
             document.querySelectorAll('.edit-card').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1139,24 +1385,21 @@
         
         // Удаление карточки
         async function deleteCard(cardId) {
-            if (confirm('Вы уверены, что хотите удалить эту карточку?')) {
+            if (confirm('Удалить эту карточку?')) {
                 const folder = appData.folders.find(f => f.id === appData.currentFolderId);
                 if (folder) {
                     folder.cards = folder.cards.filter(c => c.id !== cardId);
-                    
-                    // Автоматически сохраняем изменения
                     await autoSaveAppData();
-                    
                     renderCards();
                 }
             }
         }
         
-        // Начало викторины
+        // Викторина
         function startQuiz(folderId) {
             const folder = appData.folders.find(f => f.id === folderId);
-            if (!folder || folder.cards.length === 0) {
-                alert('В этой папке нет карточек для викторины!');
+            if (!folder || !folder.cards || folder.cards.length === 0) {
+                alert('В этой папке нет карточек!');
                 showScreen('view-folder-screen');
                 return;
             }
@@ -1175,39 +1418,30 @@
             document.getElementById('quiz-completed').classList.add('hidden');
             
             nextQuizCard();
-            updateQuizDisplay();
         }
         
-        // Следующая карточка в викторине
         function nextQuizCard() {
             const quiz = appData.quiz;
             
             if (quiz.remainingCards.length === 0) {
-                // Викторина завершена
                 quiz.active = false;
                 document.getElementById('quiz-completed').classList.remove('hidden');
                 document.getElementById('quiz-next-btn').classList.add('hidden');
                 return;
             }
             
-            // Выбираем случайную карточку из оставшихся
             const randomIndex = Math.floor(Math.random() * quiz.remainingCards.length);
             quiz.currentCard = quiz.remainingCards[randomIndex];
             quiz.showAnswer = false;
-            
-            // Удаляем выбранную карточку из оставшихся
             quiz.remainingCards.splice(randomIndex, 1);
             
             updateQuizDisplay();
         }
         
-        // Обновление отображения викторины
         function updateQuizDisplay() {
             const quiz = appData.quiz;
             
-            if (!quiz.currentCard) {
-                return;
-            }
+            if (!quiz.currentCard) return;
             
             const stateLabel = document.getElementById('quiz-state-label');
             const content = document.getElementById('quiz-content');
@@ -1235,12 +1469,11 @@
             progress.textContent = `Карточка ${totalCards - remaining + 1} из ${totalCards}`;
         }
         
-        // Обработчики событий при загрузке страницы
+        // Обработчики событий
         document.addEventListener('DOMContentLoaded', async () => {
-            // Загружаем данные из IndexedDB
             await loadInitialData();
             
-            // Выбор цвета папки
+            // Выбор цвета
             document.querySelectorAll('.color-option').forEach(option => {
                 option.addEventListener('click', () => {
                     document.querySelectorAll('.color-option').forEach(opt => {
@@ -1279,10 +1512,7 @@
                     };
                     
                     appData.folders.push(newFolder);
-                    
-                    // Автоматически сохраняем изменения
                     await autoSaveAppData();
-                    
                     showScreen('folders-screen');
                 }
             });
@@ -1312,15 +1542,15 @@
                     const folder = appData.folders.find(f => f.id === appData.currentFolderId);
                     
                     if (folder) {
+                        if (!folder.cards) folder.cards = [];
+                        
                         if (appData.currentCardId) {
-                            // Редактирование существующей карточки
                             const card = folder.cards.find(c => c.id === appData.currentCardId);
                             if (card) {
                                 card.question = question;
                                 card.answer = answer;
                             }
                         } else {
-                            // Создание новой карточки
                             const newCard = {
                                 id: generateId(),
                                 question,
@@ -1330,21 +1560,17 @@
                             folder.cards.push(newCard);
                         }
                         
-                        // Автоматически сохраняем изменения
                         await autoSaveAppData();
-                        
                         showScreen('view-folder-screen');
                     }
                 }
             });
             
-            // Следующий шаг в викторине
+            // Викторина
             document.getElementById('quiz-next-btn').addEventListener('click', () => {
                 if (appData.quiz.showAnswer) {
-                    // Переходим к следующей карточке
                     nextQuizCard();
                 } else {
-                    // Показываем ответ
                     appData.quiz.showAnswer = true;
                     updateQuizDisplay();
                 }
@@ -1355,25 +1581,28 @@
                 startQuiz(appData.quiz.currentFolderId);
             });
             
-            // Навигация через нижнюю панель
+            // Навигация
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     const screenId = item.getAttribute('data-screen');
-                    
-                    if (screenId === 'quiz-screen') {
-                        // Для викторины нужна активная папка
-                        if (appData.currentFolderId) {
-                            showScreen(screenId);
-                        } else {
-                            showScreen(screenId);
-                            // Сообщение уже отображается в showScreen
-                        }
-                    } else {
-                        showScreen(screenId);
-                    }
+                    showScreen(screenId);
                 });
             });
+            
+            // Сохраняем данные при закрытии страницы
+            window.addEventListener('beforeunload', async () => {
+                try {
+                    await storage.save(appData);
+                } catch (error) {
+                    console.error('Ошибка сохранения при закрытии:', error);
+                }
+            });
+            
+            // Периодическое сохранение каждые 30 секунд
+            setInterval(async () => {
+                await autoSaveAppData();
+            }, 30000);
         });
     </script>
 </body>
